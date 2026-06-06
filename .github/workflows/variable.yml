@@ -5,10 +5,44 @@ env:
 
 on:
   push:
-      
 
 jobs:
+  test_expression:
+    name: job to test expression
+    runs-on: ubuntu-latest
+    env:
+      aBoolean: ${{ false }}
+      aNull: ${{ null }}
+      aNumber: ${{ 7 }}
+      aString: This is a string
+    steps:
+      - name: test null
+        if: (env.aNull == null)
+        run: echo this variable is null
+      - name: test boolean
+        if: (fromJson(env.aBoolean))
+        run: echo this job wont run as our variable is false
+      - name: contain function
+        if: ${{ contains(env.aString, 'this') }}
+        run: |
+          echo "our string var contain the word this"
+          echos "but here is the typo that will make this step fail"
+      - name: test status check and format function
+        if: ${{ failure() }}
+        env:
+          FORMAT_VAR: ${{ format('Github {0} {1} {2}', 'actions', 'is', 'awesome!') }}
+        run: |
+          echo "this step run a special to clean up after the fail step"
+          echo ${{ env.FORMAT_VAR }}
+      - name: function and always status check
+        if: ${{ startsWith(env.aString, 'this') && always() }}
+        run: sleep 60
+      - name: test cancel status check
+        if: ${{ cancelled() }}
+        run: echo "this job is run fi workflow is cancelled, it can always used in clean-up script"
+
   variable_test: 
+    if: (github.event_name == 'pull-request')
     env:
       JOB_VAR: "Job level variable"
     name: job to test variable
